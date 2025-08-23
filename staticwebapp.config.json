@@ -9,6 +9,14 @@
       "allowedRoles": [
         "anonymous"
       ]
+    },
+    {
+      "route": "/admin",
+      "methods": [
+        "get"
+      ],
+      "redirect": "/index.html",
+      "statusCode": 200
     }
   ]
 }
