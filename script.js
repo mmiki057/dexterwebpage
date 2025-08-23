@@ -1,4 +1,3 @@
-// Global variables
 let githubConfig = {
     token: localStorage.getItem('githubToken') || '',
     repo: localStorage.getItem('githubRepo') || '',
@@ -31,7 +30,6 @@ let products = [
         image: null
     }
 ];
-
 const translations = {
     pl: {
         navHome: "Strona główna",
@@ -523,7 +521,10 @@ document.addEventListener('DOMContentLoaded', function() {
     renderPortfolio();
     
     if (githubConfig.repo) {
+        console.log('Loading products from GitHub on page load...');
         loadProductsFromGitHub();
+    } else {
+        console.log('GitHub not configured, using default products');
     }
 
     document.getElementById('projectForm').addEventListener('submit', async function(e) {
@@ -566,3 +567,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+setInterval(() => {
+    if (githubConfig.repo && document.visibilityState === 'visible') {
+        console.log('Checking for updates...');
+        loadProductsFromGitHub();
+    }
+}, 30000);
