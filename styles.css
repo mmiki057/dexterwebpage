@@ -397,23 +397,6 @@ footer {
 }
 
 /* Admin Panel */
-.admin-panel {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-}
-
-.admin-toggle {
-    background: #ff6600;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: 600;
-}
-
 .admin-modal {
     display: none;
     position: fixed;
@@ -622,12 +605,7 @@ footer {
 
     .language-switcher {
         right: 20px;
-        top: 70px;
-    }
-
-    .admin-panel {
-        top: 70px;
-        right: 160px;
+        top: 20px;
     }
 
     .admin-content {
