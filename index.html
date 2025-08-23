@@ -13,10 +13,6 @@
         <button class="lang-btn" onclick="changeLanguage('en')" id="langEn">EN</button>
     </div>
 
-    <div class="admin-panel">
-        <button class="admin-toggle" onclick="openAdminPanel()" id="adminBtn">Zarządzanie</button>
-    </div>
-
     <div id="adminModal" class="admin-modal">
         <div class="admin-content">
             <button class="close-modal" onclick="closeAdminPanel()">&times;</button>
@@ -29,7 +25,7 @@
                 <div class="form-group">
                     <label id="githubTokenLabel">GitHub Token:</label>
                     <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-                    <small id="githubTokenHelp">Potrzebny do zapisywania zmian. Utwórz w GitHub Settings > Developer settings > Personal access tokens</small>
+                    <small id="githubTokenHelp">Потrzebny do zapisywania zmian. Utwórz CLASSIC token w GitHub Settings > Developer settings > Personal access tokens (classic) z uprawnieniami 'repo'</small>
                 </div>
                 <div class="form-group">
                     <label id="githubRepoLabel">Nazwa repozytorium:</label>
