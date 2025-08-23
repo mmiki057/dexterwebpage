@@ -541,7 +541,20 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-    const path = window.location.pathname;
+    const path = window.location.pathname.toLowerCase();
+
+    const adminRedirectPaths = [
+        '/pl/admin',
+        '/en/admin',
+        '/pl/zarzadzanie',
+        '/en/zarzadzanie'
+    ];
+
+    if (adminRedirectPaths.includes(path)) {
+        window.location.replace('/admin');
+        return;
+    }
+
     const adminPanel = document.querySelector(".admin-panel");
     const langSwitcher = document.querySelector(".language-switcher");
 
