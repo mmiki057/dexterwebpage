@@ -541,21 +541,26 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  const path = window.location.pathname;
+    const path = window.location.pathname;
 
-  const adminPanel = document.querySelector(".admin-panel");
-  const langSwitcher = document.querySelector(".language-switcher");
+    const adminPanel = document.querySelector(".admin-panel");
+    const langSwitcher = document.querySelector(".language-switcher");
 
-  if (adminPanel) adminPanel.style.display = "none";
-  if (langSwitcher) langSwitcher.style.display = "none";
-
-  if (path.endsWith("/admin") || path.endsWith("/admin.html")) {
-    if (adminPanel) adminPanel.style.display = "block";
-  } else if (path.endsWith("/pl") || path.endsWith("/pl.html")) {
     if (langSwitcher) langSwitcher.style.display = "block";
-    changeLanguage("pl");
-  } else if (path.endsWith("/en") || path.endsWith("/en.html")) {
-    if (langSwitcher) langSwitcher.style.display = "block";
-    changeLanguage("en");
-  }
+
+    if (adminPanel) adminPanel.style.display = "none";
+    if (path.endsWith("/admin") || path.endsWith("/admin.html")) {
+        if (adminPanel) adminPanel.style.display = "block";
+    }
+
+    if (path.endsWith("/pl") || path.endsWith("/pl.html")) {
+        changeLanguage("pl");
+    } else if (path.endsWith("/en") || path.endsWith("/en.html")) {
+        changeLanguage("en");
+    } else {
+        changeLanguage(currentLanguage);
+    }
+
+    document.getElementById("langPl").onclick = () => window.location.pathname = "/pl";
+    document.getElementById("langEn").onclick = () => window.location.pathname = "/en";
 });
