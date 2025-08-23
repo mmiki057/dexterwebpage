@@ -542,28 +542,20 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 
 document.addEventListener("DOMContentLoaded", () => {
     const path = window.location.pathname;
-
     const adminPanel = document.querySelector(".admin-panel");
     const langSwitcher = document.querySelector(".language-switcher");
 
     if (langSwitcher) langSwitcher.style.display = "block";
+
     if (adminPanel) adminPanel.style.display = "none";
 
     if (path === "/admin" || path === "/admin.html") {
         if (adminPanel) adminPanel.style.display = "block";
     }
 
-    if (path === "/pl" || path === "/pl.html") {
-        changeLanguage("pl");
-    } else if (path === "/en" || path === "/en.html") {
-        changeLanguage("en");
-    } else {
-        changeLanguage(currentLanguage);
-    }
-
-    document.getElementById("langPl").onclick = () => window.location.pathname = "/pl";
-    document.getElementById("langEn").onclick = () => window.location.pathname = "/en";
-});
+    if (path === "/pl" || path === "/pl.html") changeLanguage("pl");
+    else if (path === "/en" || path === "/en.html") changeLanguage("en");
+    else changeLanguage(currentLanguage);
 
     document.getElementById("langPl").onclick = () => window.location.pathname = "/pl";
     document.getElementById("langEn").onclick = () => window.location.pathname = "/en";
