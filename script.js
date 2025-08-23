@@ -1,5 +1,5 @@
 let githubConfig = {
-    token: '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',
+    token: 'ghp_w8R7KgQXv3YzL9mN5pT2hF6jD4xA1sE8uC0q',
     repo: 'mmiki057/dexterwebpage',
     branch: 'main'
 };
@@ -204,8 +204,17 @@ async function saveProductsToGitHub() {
 
 function checkAdminRoute() {
     const path = window.location.pathname.toLowerCase();
-    if (path.includes('zarządzanie') || path.includes('zarzadzanie')) {
+    if (path.includes('zarządzanie') || path.includes('zarzadzanie') || path.includes('admin')) {
         openAdminPanel();
+    }
+}
+
+function checkLanguageRoute() {
+    const path = window.location.pathname.toLowerCase();
+    if (path === '/pl' || path.startsWith('/pl/')) {
+        changeLanguage('pl');
+    } else if (path === '/en' || path.startsWith('/en/')) {
+        changeLanguage('en');
     }
 }
 
@@ -434,6 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
     changeLanguage(currentLanguage);
     loadProductsFromGitHub();
     
+    checkLanguageRoute();
     checkAdminRoute();
     
     document.getElementById('projectForm').addEventListener('submit', async function(e) {
