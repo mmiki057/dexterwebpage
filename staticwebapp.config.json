@@ -1,1 +1,14 @@
-{}
+{
+  "routes": [
+    {
+      "route": "/zarządzanie",
+      "methods": [
+        "get"
+      ],
+      "statusCode": 200,
+      "allowedRoles": [
+        "anonymous"
+      ]
+    }
+  ]
+}
