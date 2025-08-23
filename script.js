@@ -549,13 +549,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (langSwitcher) langSwitcher.style.display = "block";
 
     if (adminPanel) adminPanel.style.display = "none";
-    if (path.endsWith("/admin") || path.endsWith("/admin.html")) {
+
+    if (path === "/admin" || path === "/admin.html") {
         if (adminPanel) adminPanel.style.display = "block";
     }
 
-    if (path.endsWith("/pl") || path.endsWith("/pl.html")) {
+    if (path.endsWith("/admin") && path !== "/admin" && path !== "/admin.html") {
+        window.location.pathname = "/";
+    }
+
+    if (path === "/pl" || path === "/pl.html") {
         changeLanguage("pl");
-    } else if (path.endsWith("/en") || path.endsWith("/en.html")) {
+    } else if (path === "/en" || path === "/en.html") {
         changeLanguage("en");
     } else {
         changeLanguage(currentLanguage);
