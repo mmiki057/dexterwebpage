@@ -1,5 +1,5 @@
 let githubConfig = {
-    token: 'ghp_w8R7KgQXv3YzL9mN5pT2hF6jD4xA1sE8uC0q',
+    token: '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',
     repo: 'mmiki057/dexterwebpage',
     branch: 'main'
 };
@@ -338,6 +338,12 @@ function changeLanguage(lang) {
     
     renderPortfolio();
     renderProjectsList();
+    
+    // Update URL if we're not already on the correct language route
+    const currentPath = window.location.pathname;
+    if (!currentPath.startsWith(`/${lang}`)) {
+        window.history.pushState({}, '', `/${lang}`);
+    }
 }
 
 function renderPortfolio() {
