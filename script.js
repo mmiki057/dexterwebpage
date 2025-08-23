@@ -1,6 +1,6 @@
 let githubConfig = {
-    token: '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',
-    repo: 'mmiki057/dexterwebpage',
+    token: localStorage.getItem('githubToken') || '',
+    repo: localStorage.getItem('githubRepo') || '',
     branch: 'main'
 };
 
@@ -106,13 +106,18 @@ const translations = {
 let currentLanguage = localStorage.getItem('dexterLanguage') || 'pl';
 
 async function loadProductsFromGitHub() {
+    const repo = githubConfig.repo || 'mmiki057/dexterwebpage';
+    
     try {
         const headers = {
-            'Accept': 'application/vnd.github.v3+json',
-            'Authorization': `token ${githubConfig.token}`
+            'Accept': 'application/vnd.github.v3+json'
         };
+        
+        if (githubConfig.token) {
+            headers['Authorization'] = `token ${githubConfig.token}`;
+        }
 
-        const response = await fetch(`https://api.github.com/repos/${githubConfig.repo}/contents/products.json`, {
+        const response = await fetch(`https://api.github.com/repos/${repo}/contents/products.json`, {
             headers: headers
         });
         
@@ -122,20 +127,20 @@ async function loadProductsFromGitHub() {
             products = JSON.parse(content);
             renderPortfolio();
             renderProjectsList();
-            console.log('Products loaded from GitHub');
+            console.log('Продукты загружены из GitHub');
         } else if (response.status === 404) {
             products = [];
             renderPortfolio();
             renderProjectsList();
-            console.log('products.json file not found');
+            console.log('Файл products.json не найден');
         } else {
-            console.warn(`GitHub API returned ${response.status}, using empty array`);
+            console.warn(`GitHub API вернул ${response.status}, используем пустой массив`);
             products = [];
             renderPortfolio();
             renderProjectsList();
         }
     } catch (error) {
-        console.error('Error loading from GitHub:', error);
+        console.error('Ошибка загрузки из GitHub:', error);
         products = [];
         renderPortfolio();
         renderProjectsList();
@@ -143,6 +148,11 @@ async function loadProductsFromGitHub() {
 }
 
 async function saveProductsToGitHub() {
+    if (!githubConfig.token || !githubConfig.repo) {
+        showStatus('Brak konfiguracji GitHub', 'error');
+        return false;
+    }
+
     showLoading(true);
     try {
         let sha = null;
@@ -160,7 +170,7 @@ async function saveProductsToGitHub() {
                 sha = existingFile.sha;
             }
         } catch (e) {
-            console.log('File does not exist, creating new one');
+            console.log('Файл не существует, создаем новый');
         }
         
         const content = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
@@ -168,7 +178,7 @@ async function saveProductsToGitHub() {
         const payload = {
             message: `Update products.json - ${new Date().toISOString()}`,
             content: content,
-            branch: githubConfig.branch
+            branch: githubConfig.branch || 'main'
         };
         
         if (sha) {
@@ -194,7 +204,7 @@ async function saveProductsToGitHub() {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
     } catch (error) {
-        console.error('Error saving to GitHub:', error);
+        console.error('Ошибка сохранения в GitHub:', error);
         showStatus(`Błąd zapisu do GitHub: ${error.message}`, 'error');
         return false;
     } finally {
@@ -202,50 +212,66 @@ async function saveProductsToGitHub() {
     }
 }
 
-function checkAdminRoute() {
-    const path = window.location.pathname.toLowerCase();
-    if (path.includes('zarządzanie') || path.includes('zarzadzanie') || path.includes('admin')) {
-        openAdminPanel();
-    }
-}
+async function testGitHubConnection() {
+    const token = document.getElementById('githubToken').value;
+    const repo = document.getElementById('githubRepo').value;
 
-function checkLanguageRoute() {
-    const path = window.location.pathname.toLowerCase();
-    if (path === '/pl' || path.startsWith('/pl/')) {
-        changeLanguage('pl');
-    } else if (path === '/en' || path.startsWith('/en/')) {
-        changeLanguage('en');
+    if (!token || !repo) {
+        showStatus('Wypełnij wszystkie pola', 'error');
+        return;
     }
-}
 
-function openAdminPanel() {
-    const passwords = {
-        pl: 'Wprowadź hasło administratora:',
-        en: 'Enter administrator password:'
-    };
-    
-    const password = prompt(passwords[currentLanguage]);
-    const correctPassword = 'dexter2025';
-    
-    if (password === correctPassword) {
-        document.getElementById('adminModal').style.display = 'block';
-        renderProjectsList();
-        
-        if (!window.location.pathname.includes('zarządzanie')) {
-            window.history.pushState({}, '', '/zarządzanie');
+    showLoading(true);
+    try {
+        const response = await fetch(`https://api.github.com/repos/${repo}`, {
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (response.ok) {
+            const testResponse = await fetch(`https://api.github.com/repos/${repo}/contents/test.json`, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (testResponse.status === 404) {
+                showStatus('Połączenie z GitHub działa! Token ma odpowiednie uprawnienia.', 'success');
+            } else if (testResponse.status === 403) {
+                showStatus('Połączenie działa, ale brak uprawnień do zapisu. Użyj CLASSIC token z uprawnieniami "repo".', 'error');
+            } else {
+                showStatus('Połączenie z GitHub działa!', 'success');
+            }
+        } else {
+            throw new Error(`HTTP ${response.status} - ${response.statusText}`);
         }
-    } else if (password !== null) {
-        const errorMessages = {
-            pl: 'Nieprawidłowe hasło!',
-            en: 'Incorrect password!'
-        };
-        alert(errorMessages[currentLanguage]);
+    } catch (error) {
+        console.error('GitHub connection test failed:', error);
+        showStatus(`Błąd połączenia: ${error.message}`, 'error');
+    } finally {
+        showLoading(false);
     }
 }
 
-function closeAdminPanel() {
-    document.getElementById('adminModal').style.display = 'none';
-    window.history.pushState({}, '', '/');
+function saveGitHubConfig() {
+    const token = document.getElementById('githubToken').value;
+    const repo = document.getElementById('githubRepo').value;
+
+    if (!token || !repo) {
+        showStatus('Wypełnij wszystkie pola', 'error');
+        return;
+    }
+
+    githubConfig.token = token;
+    githubConfig.repo = repo;
+
+    localStorage.setItem('githubToken', token);
+    localStorage.setItem('githubRepo', repo);
+
+    showStatus('Konfiguracja zapisana', 'success');
 }
 
 function showStatus(message, type) {
@@ -313,7 +339,7 @@ function processImageFile(file) {
             };
             img.src = e.target.result;
         };
-        reader.onerror = () => reject('Error reading file');
+        reader.onerror = () => reject('Ошибка при чтении файла');
         reader.readAsDataURL(file);
     });
 }
@@ -338,12 +364,6 @@ function changeLanguage(lang) {
     
     renderPortfolio();
     renderProjectsList();
-    
-    // Update URL if we're not already on the correct language route
-    const currentPath = window.location.pathname;
-    if (!currentPath.startsWith(`/${lang}`)) {
-        window.history.pushState({}, '', `/${lang}`);
-    }
 }
 
 function renderPortfolio() {
@@ -415,6 +435,35 @@ async function removeProduct(index) {
     }
 }
 
+function openAdminPanel() {
+    const passwords = {
+        pl: 'Wprowadź hasło administratora:',
+        en: 'Enter administrator password:'
+    };
+    
+    const password = prompt(passwords[currentLanguage]);
+    const correctPassword = 'dexter2025';
+    
+    if (password === correctPassword) {
+        document.getElementById('adminModal').style.display = 'block';
+        
+        document.getElementById('githubToken').value = githubConfig.token;
+        document.getElementById('githubRepo').value = githubConfig.repo;
+        
+        renderProjectsList();
+    } else if (password !== null) {
+        const errorMessages = {
+            pl: 'Nieprawidłowe hasło!',
+            en: 'Incorrect password!'
+        };
+        alert(errorMessages[currentLanguage]);
+    }
+}
+
+function closeAdminPanel() {
+    document.getElementById('adminModal').style.display = 'none';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const imageInput = document.getElementById('projectImage');
     const imagePreview = document.getElementById('imagePreview');
@@ -447,31 +496,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     changeLanguage(currentLanguage);
-    loadProductsFromGitHub();
-    
-    checkLanguageRoute();
-    checkAdminRoute();
-    
-    document.getElementById('projectForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const title = document.getElementById('projectTitle').value;
-        const description = document.getElementById('projectDescription').value;
-        const specs = document.getElementById('projectSpecs').value.split(',').map(s => s.trim()).filter(s => s);
-        const status = document.getElementById('projectStatus').value;
-        const year = document.getElementById('projectYear').value;
-        const imagePreview = document.getElementById('imagePreview');
-        const image = imagePreview.style.display === 'block' ? imagePreview.src : null;
 
-        await addProduct({ title, description, specs, status, year, image });
-        
-        this.reset();
-        imagePreview.style.display = 'none';
-        const successText = currentLanguage === 'pl' ? 
-            'Produkt dodany pomyślnie!' : 
-            'Product added successfully!';
-        showStatus(successText, 'success');
-    });
+    loadProductsFromGitHub();
+});
+
+document.getElementById('projectForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const title = document.getElementById('projectTitle').value;
+    const description = document.getElementById('projectDescription').value;
+    const specs = document.getElementById('projectSpecs').value.split(',').map(s => s.trim()).filter(s => s);
+    const status = document.getElementById('projectStatus').value;
+    const year = document.getElementById('projectYear').value;
+    const imagePreview = document.getElementById('imagePreview');
+    const image = imagePreview.style.display === 'block' ? imagePreview.src : null;
+
+    await addProduct({ title, description, specs, status, year, image });
+    
+    this.reset();
+    imagePreview.style.display = 'none';
+    const successText = currentLanguage === 'pl' ? 
+        'Produkt dodany pomyślnie!' : 
+        'Product added successfully!';
+    showStatus(successText, 'success');
 });
 
 document.addEventListener('click', function(e) {
