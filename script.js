@@ -549,12 +549,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (langSwitcher) langSwitcher.style.display = "block";
     if (adminPanel) adminPanel.style.display = "none";
 
-    const isAdminPath = path === "/admin" || path === "/admin.html";
-
-    if (isAdminPath) {
+    if (path === "/admin" || path === "/admin.html") {
         if (adminPanel) adminPanel.style.display = "block";
-    } else if (path.endsWith("/admin")) {
-        alert("Admin panel is only accessible via /admin");
     }
 
     if (path === "/pl" || path === "/pl.html") {
