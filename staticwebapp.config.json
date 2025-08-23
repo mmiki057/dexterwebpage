@@ -1,1 +1,23 @@
-{}
+{
+  "routes": [
+    {
+      "route": "/pl",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/en",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/admin",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/zarządzanie",
+      "rewrite": "/index.html"
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html"
+  }
+}
