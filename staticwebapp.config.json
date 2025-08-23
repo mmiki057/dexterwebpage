@@ -7,6 +7,17 @@
       ],
       "redirect": "/index.html",
       "statusCode": 200
+    },
+    {
+      "route": "/zarządzanie",
+      "methods": [
+        "get"
+      ],
+      "redirect": "/index.html",
+      "statusCode": 200,
+      "allowedRoles": [
+        "anonymous"
+      ]
     }
   ]
 }
