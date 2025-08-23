@@ -547,15 +547,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const langSwitcher = document.querySelector(".language-switcher");
 
     if (langSwitcher) langSwitcher.style.display = "block";
-
     if (adminPanel) adminPanel.style.display = "none";
 
-    if (path === "/admin" || path === "/admin.html") {
-        if (adminPanel) adminPanel.style.display = "block";
-    }
+    const isAdminPath = path === "/admin" || path === "/admin.html";
 
-    if (path.endsWith("/admin") && path !== "/admin" && path !== "/admin.html") {
-        window.location.pathname = "/";
+    if (isAdminPath) {
+        if (adminPanel) adminPanel.style.display = "block";
+    } else if (path.endsWith("/admin")) {
+        alert("Admin panel is only accessible via /admin");
     }
 
     if (path === "/pl" || path === "/pl.html") {
@@ -565,6 +564,10 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
         changeLanguage(currentLanguage);
     }
+
+    document.getElementById("langPl").onclick = () => window.location.pathname = "/pl";
+    document.getElementById("langEn").onclick = () => window.location.pathname = "/en";
+});
 
     document.getElementById("langPl").onclick = () => window.location.pathname = "/pl";
     document.getElementById("langEn").onclick = () => window.location.pathname = "/en";
