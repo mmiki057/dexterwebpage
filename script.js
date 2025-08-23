@@ -4,7 +4,7 @@ let githubConfig = {
     branch: 'main'
 };
 
-let products = []; 
+let products = [];
 
 const translations = {
     pl: {
@@ -107,171 +107,54 @@ let currentLanguage = localStorage.getItem('dexterLanguage') || 'pl';
 
 async function loadProductsFromGitHub() {
     const repo = githubConfig.repo || 'mmiki057/dexterwebpage';
-    
     try {
-        const headers = {
-            'Accept': 'application/vnd.github.v3+json'
-        };
-        
-        if (githubConfig.token) {
-            headers['Authorization'] = `token ${githubConfig.token}`;
-        }
+        const headers = { 'Accept': 'application/vnd.github.v3+json' };
+        if (githubConfig.token) headers['Authorization'] = `token ${githubConfig.token}`;
 
-        const response = await fetch(`https://api.github.com/repos/${repo}/contents/products.json`, {
-            headers: headers
-        });
-        
+        const response = await fetch(`https://api.github.com/repos/${repo}/contents/products.json`, { headers });
         if (response.ok) {
             const data = await response.json();
             const content = atob(data.content);
             products = JSON.parse(content);
-            renderPortfolio();
-            renderProjectsList();
-            console.log('Продукты загружены из GitHub');
-        } else if (response.status === 404) {
-            products = [];
-            renderPortfolio();
-            renderProjectsList();
-            console.log('Файл products.json не найден');
         } else {
-            console.warn(`GitHub API вернул ${response.status}, используем пустой массив`);
             products = [];
-            renderPortfolio();
-            renderProjectsList();
         }
+        renderPortfolio();
+        renderProjectsList();
     } catch (error) {
-        console.error('Ошибка загрузки из GitHub:', error);
         products = [];
         renderPortfolio();
         renderProjectsList();
+        console.error(error);
     }
 }
 
 async function saveProductsToGitHub() {
-    if (!githubConfig.token || !githubConfig.repo) {
-        showStatus('Brak konfiguracji GitHub', 'error');
-        return false;
-    }
-
+    if (!githubConfig.token || !githubConfig.repo) return showStatus('Brak konfiguracji GitHub', 'error');
     showLoading(true);
     try {
         let sha = null;
-        
-        try {
-            const getResponse = await fetch(`https://api.github.com/repos/${githubConfig.repo}/contents/products.json`, {
-                headers: {
-                    'Authorization': `token ${githubConfig.token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
-            
-            if (getResponse.ok) {
-                const existingFile = await getResponse.json();
-                sha = existingFile.sha;
-            }
-        } catch (e) {
-            console.log('Файл не существует, создаем новый');
+        const getResponse = await fetch(`https://api.github.com/repos/${githubConfig.repo}/contents/products.json`, {
+            headers: { 'Authorization': `token ${githubConfig.token}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (getResponse.ok) {
+            sha = (await getResponse.json()).sha;
         }
-        
         const content = btoa(unescape(encodeURIComponent(JSON.stringify(products, null, 2))));
-        
-        const payload = {
-            message: `Update products.json - ${new Date().toISOString()}`,
-            content: content,
-            branch: githubConfig.branch || 'main'
-        };
-        
-        if (sha) {
-            payload.sha = sha;
-        }
+        const payload = { message: `Update products.json - ${new Date().toISOString()}`, content, branch: githubConfig.branch };
+        if (sha) payload.sha = sha;
 
         const response = await fetch(`https://api.github.com/repos/${githubConfig.repo}/contents/products.json`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `token ${githubConfig.token}`,
-                'Accept': 'application/vnd.github.v3+json',
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Authorization': `token ${githubConfig.token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        if (response.ok) {
-            showStatus('Produkty zapisane do GitHub', 'success');
-            return true;
-        } else {
-            const errorData = await response.text();
-            console.error('GitHub API error:', response.status, errorData);
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        if (response.ok) showStatus('Produkty zapisane do GitHub', 'success');
+        else throw new Error(`HTTP ${response.status}`);
     } catch (error) {
-        console.error('Ошибка сохранения в GitHub:', error);
         showStatus(`Błąd zapisu do GitHub: ${error.message}`, 'error');
-        return false;
-    } finally {
-        showLoading(false);
-    }
-}
-
-async function testGitHubConnection() {
-    const token = document.getElementById('githubToken').value;
-    const repo = document.getElementById('githubRepo').value;
-
-    if (!token || !repo) {
-        showStatus('Wypełnij wszystkie pola', 'error');
-        return;
-    }
-
-    showLoading(true);
-    try {
-        const response = await fetch(`https://api.github.com/repos/${repo}`, {
-            headers: {
-                'Authorization': `token ${token}`,
-                'Accept': 'application/vnd.github.v3+json'
-            }
-        });
-
-        if (response.ok) {
-            const testResponse = await fetch(`https://api.github.com/repos/${repo}/contents/test.json`, {
-                headers: {
-                    'Authorization': `token ${token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
-            
-            if (testResponse.status === 404) {
-                showStatus('Połączenie z GitHub działa! Token ma odpowiednie uprawnienia.', 'success');
-            } else if (testResponse.status === 403) {
-                showStatus('Połączenie działa, ale brak uprawnień do zapisu. Użyj CLASSIC token z uprawnieniami "repo".', 'error');
-            } else {
-                showStatus('Połączenie z GitHub działa!', 'success');
-            }
-        } else {
-            throw new Error(`HTTP ${response.status} - ${response.statusText}`);
-        }
-    } catch (error) {
-        console.error('GitHub connection test failed:', error);
-        showStatus(`Błąd połączenia: ${error.message}`, 'error');
-    } finally {
-        showLoading(false);
-    }
-}
-
-function saveGitHubConfig() {
-    const token = document.getElementById('githubToken').value;
-    const repo = document.getElementById('githubRepo').value;
-
-    if (!token || !repo) {
-        showStatus('Wypełnij wszystkie pola', 'error');
-        return;
-    }
-
-    githubConfig.token = token;
-    githubConfig.repo = repo;
-
-    localStorage.setItem('githubToken', token);
-    localStorage.setItem('githubRepo', repo);
-
-    showStatus('Konfiguracja zapisana', 'success');
+    } finally { showLoading(false); }
 }
 
 function showStatus(message, type) {
@@ -279,63 +162,30 @@ function showStatus(message, type) {
     indicator.textContent = message;
     indicator.className = `status-indicator status-${type}`;
     indicator.style.display = 'block';
-
-    setTimeout(() => {
-        indicator.style.display = 'none';
-    }, 5000);
+    setTimeout(() => indicator.style.display = 'none', 5000);
 }
 
-function showLoading(show) {
-    document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none';
-}
+function showLoading(show) { document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none'; }
 
 function processImageFile(file) {
     return new Promise((resolve, reject) => {
-        if (file.size > 2 * 1024 * 1024) {
-            const errorText = currentLanguage === 'pl' ? 
-                'Plik jest zbyt duży! Maksymalny rozmiar: 2MB' : 
-                'File is too large! Maximum size: 2MB';
-            reject(errorText);
-            return;
-        }
-
-        if (!file.type.startsWith('image/')) {
-            const errorText = currentLanguage === 'pl' ? 
-                'Nieprawidłowy typ pliku! Wybierz obraz.' : 
-                'Invalid file type! Please select an image.';
-            reject(errorText);
-            return;
-        }
+        if (file.size > 2 * 1024 * 1024) return reject(currentLanguage === 'pl' ? 'Plik jest zbyt duży! Maksymalny rozmiar: 2MB' : 'File is too large! Maximum size: 2MB');
+        if (!file.type.startsWith('image/')) return reject(currentLanguage === 'pl' ? 'Nieprawidłowy typ pliku! Wybierz obraz.' : 'Invalid file type! Please select an image.');
 
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = e => {
             const img = new Image();
             img.onload = function() {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-
-                const maxWidth = 800;
-                const maxHeight = 600;
-                
                 let { width, height } = img;
-
-                if (width > height) {
-                    if (width > maxWidth) {
-                        height = (height * maxWidth) / width;
-                        width = maxWidth;
-                    }
-                } else {
-                    if (height > maxHeight) {
-                        width = (width * maxHeight) / height;
-                        height = maxHeight;
-                    }
-                }
-
+                const maxWidth = 800, maxHeight = 600;
+                if (width > height && width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; }
+                else if (height > maxHeight) { width = (width * maxHeight) / height; height = maxHeight; }
                 canvas.width = width;
                 canvas.height = height;
                 ctx.drawImage(img, 0, 0, width, height);
-                const compressedImage = canvas.toDataURL('image/jpeg', 0.8);
-                resolve(compressedImage);
+                resolve(canvas.toDataURL('image/jpeg', 0.8));
             };
             img.src = e.target.result;
         };
@@ -347,21 +197,10 @@ function processImageFile(file) {
 function changeLanguage(lang) {
     currentLanguage = lang;
     localStorage.setItem('dexterLanguage', lang);
-    
-    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-    if (lang === 'pl') {
-        document.getElementById('langPl').classList.add('active');
-    } else if (lang === 'en') {
-        document.getElementById('langEn').classList.add('active');
-    }
-    
     Object.keys(translations[lang]).forEach(key => {
         const element = document.getElementById(key);
-        if (element) {
-            element.textContent = translations[lang][key];
-        }
+        if (element) element.textContent = translations[lang][key];
     });
-    
     renderPortfolio();
     renderProjectsList();
 }
@@ -369,140 +208,78 @@ function changeLanguage(lang) {
 function renderPortfolio() {
     const grid = document.getElementById('portfolioGrid');
     grid.innerHTML = '';
-
-    products.forEach((product, index) => {
+    products.forEach(product => {
         const statusClass = product.status === 'available' ? 'status-available' : 'status-sold';
         const statusText = product.status === 'available' ? translations[currentLanguage].statusAvailable : translations[currentLanguage].statusSold;
-
-        const productElement = document.createElement('div');
-        productElement.className = 'portfolio-item';
-        
-        const imageContent = product.image ? 
-            `<img src="${product.image}" alt="${product.title}">` : 
-            'Product Photo';
-        
-        productElement.innerHTML = `
-            <div class="portfolio-image">${imageContent}</div>
-            <div class="portfolio-content">
-                <div class="portfolio-title">${product.title}</div>
-                <div class="portfolio-description">${product.description}</div>
-                <div class="portfolio-specs">
-                    ${product.specs.map(spec => `<span class="spec-tag">${spec}</span>`).join('')}
-                    ${product.year ? `<span class="spec-tag">${product.year}</span>` : ''}
+        grid.innerHTML += `
+            <div class="portfolio-item">
+                <div class="portfolio-image">${product.image ? `<img src="${product.image}" alt="${product.title}">` : 'Product Photo'}</div>
+                <div class="portfolio-content">
+                    <div class="portfolio-title">${product.title}</div>
+                    <div class="portfolio-description">${product.description}</div>
+                    <div class="portfolio-specs">${product.specs.map(s => `<span class="spec-tag">${s}</span>`).join('')}${product.year ? `<span class="spec-tag">${product.year}</span>` : ''}</div>
+                    <div class="portfolio-status ${statusClass}">${statusText}</div>
                 </div>
-                <div class="portfolio-status ${statusClass}">${statusText}</div>
-            </div>
-        `;
-        grid.appendChild(productElement);
+            </div>`;
     });
 }
 
 function renderProjectsList() {
     const list = document.getElementById('projectsList');
     list.innerHTML = '';
-
     products.forEach((product, index) => {
-        const productDiv = document.createElement('div');
-        productDiv.className = 'project-item';
-        productDiv.innerHTML = `
-            <h4>${product.title}</h4>
-            <p><strong>${translations[currentLanguage].statusLabel}</strong> ${product.status === 'available' ? translations[currentLanguage].statusAvailableOption : translations[currentLanguage].statusSoldOption}</p>
-            <p><strong>${translations[currentLanguage].yearLabel}</strong> ${product.year}</p>
-            ${product.image ? '<p><strong>📸</strong> Zdjęcie załączone</p>' : ''}
-            <button class="btn btn-danger" onclick="removeProduct(${index})">${translations[currentLanguage].deleteBtn}</button>
-        `;
-        list.appendChild(productDiv);
+        list.innerHTML += `
+            <div class="project-item">
+                <h4>${product.title}</h4>
+                <p><strong>${translations[currentLanguage].statusLabel}</strong> ${product.status === 'available' ? translations[currentLanguage].statusAvailableOption : translations[currentLanguage].statusSoldOption}</p>
+                <p><strong>${translations[currentLanguage].yearLabel}</strong> ${product.year}</p>
+                ${product.image ? '<p><strong>📸</strong> Zdjęcie załączone</p>' : ''}
+                <button class="btn btn-danger" onclick="removeProduct(${index})">${translations[currentLanguage].deleteBtn}</button>
+            </div>`;
     });
 }
 
-async function addProduct(productData) {
-    products.push(productData);
-    await saveProductsToGitHub();
-    renderPortfolio();
-    renderProjectsList();
-}
-
-async function removeProduct(index) {
-    const confirmText = currentLanguage === 'pl' ? 
-        'Czy na pewno chcesz usunąć ten produkt?' : 
-        'Are you sure you want to delete this product?';
-    
-    if (confirm(confirmText)) {
-        products.splice(index, 1);
-        await saveProductsToGitHub();
-        renderPortfolio();
-        renderProjectsList();
-    }
-}
+async function addProduct(productData) { products.push(productData); await saveProductsToGitHub(); renderPortfolio(); renderProjectsList(); }
+async function removeProduct(index) { if (confirm(currentLanguage === 'pl' ? 'Czy na pewno chcesz usunąć ten produkt?' : 'Are you sure you want to delete this product?')) { products.splice(index, 1); await saveProductsToGitHub(); renderPortfolio(); renderProjectsList(); } }
 
 function openAdminPanel() {
-    const passwords = {
-        pl: 'Wprowadź hasło administratora:',
-        en: 'Enter administrator password:'
-    };
-    
-    const password = prompt(passwords[currentLanguage]);
-    const correctPassword = 'dexter2025';
-    
-    if (password === correctPassword) {
+    const password = prompt(currentLanguage === 'pl' ? 'Wprowadź hasło administratora:' : 'Enter administrator password:');
+    if (password === 'dexter2025') {
         document.getElementById('adminModal').style.display = 'block';
-        
         document.getElementById('githubToken').value = githubConfig.token;
         document.getElementById('githubRepo').value = githubConfig.repo;
-        
         renderProjectsList();
-    } else if (password !== null) {
-        const errorMessages = {
-            pl: 'Nieprawidłowe hasło!',
-            en: 'Incorrect password!'
-        };
-        alert(errorMessages[currentLanguage]);
-    }
+    } else if (password !== null) alert(currentLanguage === 'pl' ? 'Nieprawidłowe hasło!' : 'Incorrect password!');
 }
 
-function closeAdminPanel() {
-    document.getElementById('adminModal').style.display = 'none';
-}
+function closeAdminPanel() { document.getElementById('adminModal').style.display = 'none'; }
 
 document.addEventListener('DOMContentLoaded', function() {
     const imageInput = document.getElementById('projectImage');
     const imagePreview = document.getElementById('imagePreview');
-
     if (imageInput && imagePreview) {
-        imageInput.addEventListener('change', function(e) {
+        imageInput.addEventListener('change', e => {
             const file = e.target.files[0];
-            if (file) {
-                processImageFile(file)
-                    .then(compressedImage => {
-                        imagePreview.src = compressedImage;
-                        imagePreview.style.display = 'block';
-                    })
-                    .catch(error => {
-                        alert(error);
-                        imageInput.value = '';
-                        imagePreview.style.display = 'none';
-                    });
-            } else {
-                imagePreview.style.display = 'none';
-            }
+            if (file) processImageFile(file).then(img => { imagePreview.src = img; imagePreview.style.display = 'block'; }).catch(err => { alert(err); imageInput.value = ''; imagePreview.style.display = 'none'; });
+            else imagePreview.style.display = 'none';
         });
     }
 
-    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-    if (currentLanguage === 'pl') {
-        document.getElementById('langPl').classList.add('active');
-    } else if (currentLanguage === 'en') {
-        document.getElementById('langEn').classList.add('active');
-    }
-    
-    changeLanguage(currentLanguage);
+    const path = window.location.pathname;
+
+    if (path.endsWith("/admin") || path.endsWith("/admin.html")) openAdminPanel();
+    if (path.endsWith("/pl") || path.endsWith("/pl.html")) changeLanguage("pl");
+    else if (path.endsWith("/en") || path.endsWith("/en.html")) changeLanguage("en");
+    else changeLanguage(currentLanguage);
+
+    document.getElementById("langPl").onclick = () => window.location.pathname = "/pl";
+    document.getElementById("langEn").onclick = () => window.location.pathname = "/en";
 
     loadProductsFromGitHub();
 });
 
 document.getElementById('projectForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
     const title = document.getElementById('projectTitle').value;
     const description = document.getElementById('projectDescription').value;
     const specs = document.getElementById('projectSpecs').value.split(',').map(s => s.trim()).filter(s => s);
@@ -510,57 +287,11 @@ document.getElementById('projectForm').addEventListener('submit', async function
     const year = document.getElementById('projectYear').value;
     const imagePreview = document.getElementById('imagePreview');
     const image = imagePreview.style.display === 'block' ? imagePreview.src : null;
-
     await addProduct({ title, description, specs, status, year, image });
-    
     this.reset();
     imagePreview.style.display = 'none';
-    const successText = currentLanguage === 'pl' ? 
-        'Produkt dodany pomyślnie!' : 
-        'Product added successfully!';
-    showStatus(successText, 'success');
+    showStatus(currentLanguage === 'pl' ? 'Produkt dodany pomyślnie!' : 'Product added successfully!', 'success');
 });
 
-document.addEventListener('click', function(e) {
-    if (e.target === document.getElementById('adminModal')) {
-        closeAdminPanel();
-    }
-});
-
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-    const path = window.location.pathname;
-
-    const adminPanel = document.querySelector(".admin-panel");
-    const langSwitcher = document.querySelector(".language-switcher");
-
-    if (langSwitcher) langSwitcher.style.display = "block";
-
-    if (adminPanel) adminPanel.style.display = "none";
-    if (path.endsWith("/admin") || path.endsWith("/admin.html")) {
-        if (adminPanel) adminPanel.style.display = "block";
-    }
-
-    if (path.endsWith("/pl") || path.endsWith("/pl.html")) {
-        changeLanguage("pl");
-    } else if (path.endsWith("/en") || path.endsWith("/en.html")) {
-        changeLanguage("en");
-    } else {
-        changeLanguage(currentLanguage);
-    }
-
-    document.getElementById("langPl").onclick = () => window.location.pathname = "/pl";
-    document.getElementById("langEn").onclick = () => window.location.pathname = "/en";
-});
+document.addEventListener('click', e => { if (e.target === document.getElementById('adminModal')) closeAdminPanel(); });
+document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); const target = document.querySelector(a.getAttribute('href')); if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
