@@ -13,6 +13,10 @@
         <button class="lang-btn" onclick="changeLanguage('en')" id="langEn">EN</button>
     </div>
 
+    <div class="admin-panel">
+        <button class="admin-toggle" onclick="openAdminPanel()" id="adminBtn">Zarządzanie</button>
+    </div>
+
     <div id="adminModal" class="admin-modal">
         <div class="admin-content">
             <button class="close-modal" onclick="closeAdminPanel()">&times;</button>
@@ -20,6 +24,22 @@
             
             <div id="statusIndicator" class="status-indicator"></div>
             
+            <div class="github-config">
+                <h4 style="color: #ff6600; margin-bottom: 15px;" id="githubConfigTitle">Konfiguracja GitHub</h4>
+                <div class="form-group">
+                    <label id="githubTokenLabel">GitHub Token:</label>
+                    <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+                    <small id="githubTokenHelp">Потrzebny do zapisywania zmian. Utwórz CLASSIC token w GitHub Settings > Developer settings > Personal access tokens (classic) z uprawnieniami 'repo'</small>
+                </div>
+                <div class="form-group">
+                    <label id="githubRepoLabel">Nazwa repozytorium:</label>
+                    <input type="text" id="githubRepo" placeholder="username/repository-name">
+                    <small id="githubRepoHelp">Format: username/repository-name</small>
+                </div>
+                <button class="btn btn-success" onclick="testGitHubConnection()" id="testConnectionBtn">Testuj połączenie</button>
+                <button class="btn" onclick="saveGitHubConfig()" id="saveConfigBtn">Zapisz konfigurację</button>
+            </div>
+
             <div class="project-form">
                 <h4 style="color: #ff6600; margin-bottom: 15px;" id="addProjectTitle">Dodaj nowy produkt</h4>
                 <form id="projectForm">
