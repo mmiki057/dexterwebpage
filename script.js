@@ -1,5 +1,5 @@
 let githubConfig = {
-    token: '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',
+    token: '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',
     repo: 'mmiki057/dexterwebpage',
     branch: 'main'
 };
